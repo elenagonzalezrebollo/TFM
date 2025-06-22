@@ -1,0 +1,10 @@
+Flask>=3.0
+Flask-SQLAlchemy
+Flask-Migrate
+Flask-Login
+Flask-WTF
+WTForms
+Flask-Bcrypt
+openai-whisper
+ollama
+cryptography

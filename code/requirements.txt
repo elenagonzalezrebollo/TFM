@@ -1,0 +1,13 @@
+# flask
+openai-whisper
+torch
+torchaudio
+ffmpeg-python
+requests
+streamlit
+streamlit-audiorec
+langchain
+
+
+# EJECUTAR EN CONSOLA
+# pip install -r requirements.txt 

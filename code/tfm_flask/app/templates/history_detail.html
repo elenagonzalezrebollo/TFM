@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}{{ h.display_name }} — NoteWave{% endblock %}
+{% block content %}
+  <a id="link-back" href="{{ url_for('main.dashboard') }}" class="back"><i class="fas fa-arrow-left"></i> Volver</a>
+  <h2>{{ h.filename }}</h2>
+  <p class="history-detail-date"><small>{{ h.timestamp.strftime("%d-%m-%Y %H:%M:%S") }}</small></p>
+
+  <audio controls src="{{ url_for('main.download', filename=h.audio_path) }}"></audio>
+  <div class="transcription">
+    <h3>Transcripción</h3>
+    <blockquote>{{ h.transcription }}</blockquote>
+    <a id="btn-audio-download" class="btn" href="{{ url_for('main.download', filename=h.audio_path) }}"><i class="fas fa-download"></i> Audio</a>
+  </div>
+
+  <div class="summaries">
+    <h3>Resumen corto</h3>
+    <blockquote>{{ h.summary_short }}</blockquote>
+    <h3>Resumen detallado</h3>
+    <blockquote>{{ h.summary_long|safe }}</blockquote>
+  </div>
+
+  {# Delete Button Form #}
+  <form method="POST" action="{{ url_for('main.delete_history', history_id=h.id) }}" onsubmit="return confirm('¿Estás seguro de que quieres eliminar este elemento del historial?');" style="margin-top: 20px;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+    <button id="btn-delete-history" type="submit" class="btn btn-delete-history"><i class="fas fa-trash-alt"></i>  Eliminar del Historial</button>
+  </form>
+{% endblock %}

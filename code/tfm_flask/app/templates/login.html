@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% set body_class = 'auth-page login-page' %}
+{% block title %}NoteWave{% endblock %}
+{% block content %}
+  <div class="card auth-card">
+    <h2>Iniciar sesión</h2>
+    <form method="post">
+      {{ form.hidden_tag() }}
+      <div class="form-group">
+        {{ form.username.label }}
+        {{ form.username(class="form-control") }}
+      </div>
+      <div class="form-group">
+        {{ form.password.label }}
+        {{ form.password(class="form-control") }}
+      </div>
+      {{ form.submit(class="btn btn-auth-primary") }}
+      <p class="auth-link">¿Sin cuenta? <a href="{{ url_for('auth.register') }}">Regístrate</a></p>
+    </form>
+  </div>
+{% endblock %}

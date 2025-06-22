@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+{% set body_class = 'disable-main-scroll' %}
+{% block title %}NoteWave{% endblock %}
+
+{% block extra_head %}
+  <script>
+    const UPLOAD_URL = "{{ url_for('main.upload') }}";
+  </script>
+  <script type="module" src="https://cdn.jsdelivr.net/npm/ldrs/dist/auto/grid.js"></script>
+{% endblock %}
+{% block content %}
+<div class="main-content dashboard-main-content">
+    <div class="container-fluid">
+
+        <div class="new-block text-center">
+            <div id="loading-spinner" style="display: none; text-align: center; margin-top: 50px; margin-bottom: 50px;">                
+                
+                <l-grid size="80" speed="1.5" color="black"></l-grid>
+                <p style="margin-top: 20px; font-size: 16px;">Procesando audio con NoteWave...</p>
+            </div>
+            <div id="main-upload-content">
+                <h2>Nueva transcripción</h2>
+                <form id="upload-form" method="POST" action="{{ url_for('main.upload') }}" enctype="multipart/form-data" class="mt-4">
+                    <div class="uploader">
+                        <div class="file-input-area">
+                            <i class="fas fa-cloud-upload-alt uploader-icon"></i>
+                            <input type="file" name="file" id="file-input" class="form-control" required>
+                            <label for="file-input" class="uploader-label">Arrastra y suelta un archivo aquí o haz clic para seleccionar</label>
+                        </div>
+                        <button type="button" id="transcribe-file-btn" class="btn btn-primary btn-transcribe btn-transcribe-spaced mt-5">Transcribir archivo</button>
+                    </div>
+                </form>
+                <div class="record-section mt-3">
+                    <p class="mb-3">O graba directamente desde tu sistema:</p>
+                    <div id="record-buttons-container" class="record-buttons">
+                        <button id="record-mic-btn" class="btn btn-secondary"><i class="fas fa-microphone"></i> Grabar Micrófono</button>
+                        <button id="record-system-btn" class="btn btn-secondary"><i class="fas fa-desktop"></i> Grabar Sistema</button>
+                    </div>
+                </div> 
+                <div id="recording-controls" class="mt-3" style="display: none;">
+                    <button id="stop-record-btn" class="btn btn-danger"><i class="fas fa-stop-circle"></i> Detener Grabación</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    window.showMainLoader = function() {
+        console.log(" Showing loader");
+        const mainContent = document.getElementById('main-upload-content');
+        const loadingSpinnerElement = document.getElementById('loading-spinner');
+        if (mainContent) mainContent.style.display = 'none';
+        if (loadingSpinnerElement) {
+            loadingSpinnerElement.style.display = 'block';
+            const isDarkMode = document.body.classList.contains('dark-mode');
+            
+            const loader = loadingSpinnerElement.querySelector('l-grid');
+            if (loader) {
+                loader.color = isDarkMode ? 'white' : 'black';
+            }
+            
+            const loaderText = loadingSpinnerElement.querySelector('p');
+            if (loaderText) {
+                loaderText.style.color = isDarkMode ? 'white' : 'black';
+            }
+            
+            const logoImg = document.getElementById('loader-logo');
+            if (logoImg) {
+                const currentSrc = logoImg.src.split('?')[0]; 
+                logoImg.src = `${currentSrc}?theme=${isDarkMode ? 'dark' : 'light'}&t=${new Date().getTime()}`;
+            }
+        } else {
+            console.error(" Error Loading spinner element not found!");
+        }
+    };
+
+    window.hideMainLoader = function() {
+        console.log(" Hiding loader");
+        const mainContent = document.getElementById('main-upload-content');
+        const loadingSpinnerElement = document.getElementById('loading-spinner');
+        if (mainContent) mainContent.style.display = 'block';
+        if (loadingSpinnerElement) loadingSpinnerElement.style.display = 'none';
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+        console.log(" Dashboard page loaded");
+        
+        const fileInputArea = document.querySelector('.file-input-area');
+        if (fileInputArea && fileInputArea.children.length === 0) {
+            fileInputArea.innerHTML = `<i class="fas fa-cloud-upload-alt uploader-icon"></i>
+                <input type="file" name="file" id="file-input" class="form-control" required>
+                <label for="file-input" class="uploader-label">Arrastra y suelta un archivo aquí o haz clic para seleccionar</label>`;
+        }
+
+        const fileInput = document.getElementById('file-input');
+        const uploaderLabel = document.querySelector('.uploader-label');
+        const uploaderDiv = document.querySelector('.uploader');
+        
+        if (fileInput && uploaderLabel && uploaderDiv) {
+            const originalLabelText = uploaderLabel.textContent;
+            fileInput.addEventListener('change', function() {
+                if (this.files && this.files.length > 0) {
+                    uploaderLabel.textContent = this.files[0].name;
+                } else {
+                    uploaderLabel.textContent = originalLabelText;
+                }
+            });
+
+            uploaderDiv.addEventListener('dragover', (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                uploaderDiv.classList.add('dragover');
+            });
+
+            uploaderDiv.addEventListener('dragleave', (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                if (!uploaderDiv.contains(event.relatedTarget)) {
+                    uploaderDiv.classList.remove('dragover');
+                }
+            });
+
+            uploaderDiv.addEventListener('drop', (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                uploaderDiv.classList.remove('dragover');
+                const droppedFiles = event.dataTransfer.files;
+                if (droppedFiles.length > 0) {
+                    fileInput.files = droppedFiles;
+                    const changeEvent = new Event('change', { bubbles: true });
+                    fileInput.dispatchEvent(changeEvent);
+                }
+            });
+        }
+
+        const transcribeButton = document.getElementById('transcribe-file-btn');
+        const uploadForm = document.getElementById('upload-form');
+        
+        if (transcribeButton && uploadForm && fileInput) {
+            transcribeButton.addEventListener('click', function(event) {
+                if (fileInput.files && fileInput.files.length > 0) {
+                    window.showMainLoader();
+                    console.log("Upload started, showing loader");
+                    
+                    event.preventDefault(); 
+                    
+                    const formData = new FormData(uploadForm);
+                    
+                    const csrfMetaTag = document.querySelector('meta[name="csrf-token"]');
+                    let headers = {};
+                    if (csrfMetaTag) {
+                        headers['X-CSRFToken'] = csrfMetaTag.getAttribute('content');
+                    }
+                    
+                    const uploadUrl = uploadForm.action || UPLOAD_URL;
+                    
+                    fetch(uploadUrl, {
+                        method: 'POST',
+                        body: formData,
+                        headers: headers
+                    })
+                    .then(response => {
+                        console.log("Received response from server");
+                        if (!response.ok) {
+                            return response.json().then(errData => {
+                                throw new Error(errData.error || `Error ${response.status}: ${response.statusText}`);
+                            }).catch(parseError => {
+                                throw new Error(`Error ${response.status}: ${response.statusText}`);
+                            });                        }
+                        return response.json(); 
+                    })
+                    .then(data => {
+                        console.log("Upload successful:", data);
+                        if (data.ok && data.history_id) {
+                            window.location.href = `/history/${data.history_id}`;
+                        } else {
+                            throw new Error(data.error || 'Error procesando el archivo. Respuesta inesperada del servidor.');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error during upload:', error);
+                        alert(`Error al procesar el archivo: ${error.message}`);
+                        window.hideMainLoader();
+                    });
+                } else {
+                    uploadForm.reportValidity();
+                }
+            });
+        } else {
+            
+            if (!fileInput) console.error(" File input element (#file-input) not found.");
+            if (!transcribeButton) console.error(" Transcribe button element (#transcribe-file-btn) not found.");
+            if (!uploadForm) console.error(" Upload form element (#upload-form) not found.");
+        }
+        
+        if (window.recorder) {
+            console.log(" Registering loader functions with recorder");
+            window.recorder.onProcessingStart = window.showMainLoader;
+            window.recorder.onProcessingEnd = window.hideMainLoader;
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+    {% block title %}Página no encontrada{% endblock %}
+    {% block content %}
+      <div class="card text-center">
+        <h2>Error 404 - Página no encontrada</h2>
+        <p>Lo sentimos, la página que estás buscando no existe o ha sido movida.</p>
+        <p>Puede que hayas escrito mal la dirección o que la página ya no esté disponible.</p>
+        <a href="{{ url_for('main.dashboard') }}" class="btn primary" style="margin-top: 20px;">Volver al Dashboard</a>
+      </div>
+    {% endblock %}

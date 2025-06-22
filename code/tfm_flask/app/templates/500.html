@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Error del Servidor{% endblock %}
+{% block content %}
+  <div class="card text-center">
+    <h2>Error 500 - Error Interno del Servidor</h2>
+    <p>Lo sentimos, algo salió mal en nuestros servidores.</p>
+    <p>Estamos trabajando para solucionarlo. Por favor, inténtalo de nuevo más tarde.</p>
+    <a href="{{ url_for('main.dashboard') }}" class="btn primary" style="margin-top: 20px;">Volver al Dashboard</a>
+  </div>
+{% endblock %}
